@@ -1,21 +1,38 @@
 package simJabb.simJabb;
 
+import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Scanner;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.chat2.Chat;
+import org.jivesoftware.smack.chat2.ChatManager;
+import org.jivesoftware.smack.chat2.IncomingChatMessageListener;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
+import org.jivesoftware.smack.roster.Roster;
+import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.jxmpp.jid.EntityBareJid;
+import org.jxmpp.jid.Jid;
+import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.stringprep.XmppStringprepException;
 
 public class AppManager {
 
-	private UserManager userManager;
+	private static UserManager userManager;
 	private XMPPTCPConnectionConfiguration config;
 	private AbstractXMPPConnection connection;
 	private MessagePrinter messagePrinter;
 	private Scanner scanner;
+	private static boolean loggedIn;
+	private Roster roster;
+	private static ChatManager chatManager;
+	private static EntityBareJid sendJid;
+	private Chat chat;
 
 	// SecurityMode securityMode;
 	AppManager() {
@@ -29,8 +46,8 @@ public class AppManager {
 		userManager = new UserManager();
 		userManager.getUser().setJID(messagePrinter.askForUsername());
 		userManager.getUser().setPasswd(messagePrinter.askForPassword());
+		loggedIn = true;
 	}
-
 
 	// "losalamos.alamos.im"
 	public void startConnection() {
@@ -67,14 +84,87 @@ public class AppManager {
 			e.printStackTrace();
 		}
 	}
+	
+	public void addRoster(){
+		roster = Roster.getInstanceFor(connection);
+		roster.addRosterListener(new RosterListener() {
+			
+			public void presenceChanged(Presence presence) {
+				System.out.println("("+ZonedDateTime.now()+"): " + presence);
+				
+			}
+			
+			public void entriesUpdated(Collection<Jid> arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			public void entriesDeleted(Collection<Jid> arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			public void entriesAdded(Collection<Jid> arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		
+	}
+	
+	public void startChonversation(Chat chat){
+		String newMessage;
+		while (connection.isConnected()) {
+			newMessage = messagePrinter.scannMessage();
+			if (newMessage.equals("/disconnect")) {
+				connection.disconnect();
+				System.out.println("Now you are disconnected");
+			} else {
+				try {
+					chat.send(newMessage);
+				} catch (NotConnectedException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	public void setUpConnection(){
+		
+		try {
+			sendJid = JidCreate.entityBareFrom(messagePrinter.connectTo());
+		} catch (XmppStringprepException e) {
+			
+			e.printStackTrace();
+		}
+		
+		chatManager = ChatManager.getInstanceFor(connection);
+		chat = chatManager.chatWith(sendJid);
+		System.out.println("now you can start to chat");
 
+		chatManager.addIncomingListener(new IncomingChatMessageListener() {
+
+			public void newIncomingMessage(EntityBareJid from, Message message, Chat chat) {
+				messagePrinter.printMessage(message);
+
+			}
+		});
+		
+	}
 	public AbstractXMPPConnection getConnection() {
 		return connection;
 	}
-	
+
 	public MessagePrinter getMessagePrinter() {
 		return messagePrinter;
 	}
 
+	public boolean isLoggedIn(){
+		return loggedIn;
 	}
-
+	public Chat getChat(){
+		return chat;
+	}
+}
