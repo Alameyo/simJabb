@@ -1,6 +1,7 @@
 package simJabb.simJabb;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ public class MessagePrinter {
 			try {
 				roster.reloadAndWait();
 
-		Set<RosterEntry> entries = roster.getEntries();
+		Collection<RosterEntry> entries = roster.getEntries();
 		System.out.println("Roster:");
 		for(RosterEntry entry:entries){
 			System.out.println(entry);
