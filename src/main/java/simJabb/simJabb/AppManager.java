@@ -6,7 +6,10 @@ import java.util.Scanner;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration.SecurityMode;
+import org.jivesoftware.smack.SmackException.NoResponseException;
 import org.jivesoftware.smack.SmackException.NotConnectedException;
+import org.jivesoftware.smack.SmackException.NotLoggedInException;
+import org.jivesoftware.smack.XMPPException.XMPPErrorException;
 import org.jivesoftware.smack.chat2.Chat;
 import org.jivesoftware.smack.chat2.ChatManager;
 import org.jivesoftware.smack.chat2.IncomingChatMessageListener;
@@ -31,7 +34,7 @@ public class AppManager {
 	private static boolean loggedIn;
 	private Roster roster;
 	private static ChatManager chatManager;
-	private static EntityBareJid sendJid;
+	private EntityBareJid sendJid;
 	private Chat chat;
 
 	// SecurityMode securityMode;
@@ -84,35 +87,47 @@ public class AppManager {
 			e.printStackTrace();
 		}
 	}
-	
-	public void addRoster(){
+
+	public void addRoster() {
 		roster = Roster.getInstanceFor(connection);
 		roster.addRosterListener(new RosterListener() {
-			
+
 			public void presenceChanged(Presence presence) {
-				System.out.println("("+ZonedDateTime.now()+"): " + presence);
-				
+				System.out.println("(" + ZonedDateTime.now() + "): " + presence);
+
 			}
-			
+
 			public void entriesUpdated(Collection<Jid> arg0) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			public void entriesDeleted(Collection<Jid> arg0) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			public void entriesAdded(Collection<Jid> arg0) {
 				// TODO Auto-generated method stub
-				
+
 			}
 		});
-		
+
 	}
-	
-	public void startChonversation(Chat chat){
+
+	public void addToRoster() {
+		EntityBareJid JID;
+		try {
+			JID = JidCreate.entityBareFrom(messagePrinter.addToRoster());
+			roster.createEntry(JID, JID.toString(), null);
+			System.out.println("Contact added");
+		} catch (XmppStringprepException | NotLoggedInException | NoResponseException | XMPPErrorException | NotConnectedException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			System.out.println("Unable to add to roster");
+		}
+	}
+
+	public void startChonversation(Chat chat) {
 		String newMessage;
 		while (connection.isConnected()) {
 			newMessage = messagePrinter.scannMessage();
@@ -131,15 +146,16 @@ public class AppManager {
 			}
 		}
 	}
-	public void setUpConnection(){
-		
+
+	public void setUpConnection() {
+
 		try {
 			sendJid = JidCreate.entityBareFrom(messagePrinter.connectTo());
 		} catch (XmppStringprepException e) {
-			
+
 			e.printStackTrace();
 		}
-		
+
 		chatManager = ChatManager.getInstanceFor(connection);
 		chat = chatManager.chatWith(sendJid);
 		System.out.println("now you can start to chat");
@@ -151,20 +167,26 @@ public class AppManager {
 
 			}
 		});
-		
+
 	}
+
 	public AbstractXMPPConnection getConnection() {
 		return connection;
+	}
+
+	public Roster getRoster() {
+		return roster;
 	}
 
 	public MessagePrinter getMessagePrinter() {
 		return messagePrinter;
 	}
 
-	public boolean isLoggedIn(){
+	public boolean isLoggedIn() {
 		return loggedIn;
 	}
-	public Chat getChat(){
+
+	public Chat getChat() {
 		return chat;
 	}
 }

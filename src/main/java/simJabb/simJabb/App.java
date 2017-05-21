@@ -6,21 +6,45 @@ package simJabb.simJabb;
  */
 public class App {
 	private static AppManager appManager;
-	public static void main(String[] args) {
+	private static boolean running;
 
+	public static void main(String[] args) {
+		running = true;
 		appManager = new AppManager();
 
-		appManager.login();
-		appManager.isLoggedIn();
-		appManager.startConnection();
-		appManager.sendPresence();
-		appManager.getMessagePrinter();
-		appManager.addRoster();
-		appManager.setUpConnection();
-		appManager.startChonversation(appManager.getChat());
+		while (running == true) {
+			appManager.login();
+			appManager.startConnection();
+			appManager.sendPresence();
+			appManager.addRoster();
+			while (running == true) {
+				menuSwitch: switch (appManager.getMessagePrinter().menuTree()) {
+				case "/roster": {
+					rosterSwitch: switch (appManager.getMessagePrinter().rosterTree()) {
+					case "/contacts": {
+						appManager.getMessagePrinter().printRoster(appManager.getRoster());
+						break rosterSwitch;
+					}
+					case "/add": {
+						appManager.addToRoster();
+						break rosterSwitch;
+					}
+					case "/back": {
+						break rosterSwitch;
+					}
 
-			System.out.println("unable to connect or send message");
-		
+					}
+					break menuSwitch;
+				}
 
+				case "/chat": {
+					appManager.setUpConnection();
+					appManager.startChonversation(appManager.getChat());
+					break menuSwitch;
+				}
+				}
+			}
+
+		}
 	}
 }
